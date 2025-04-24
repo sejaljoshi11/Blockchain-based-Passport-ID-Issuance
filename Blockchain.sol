@@ -31,4 +31,20 @@ contract BlockchainPassportID {
         Identity memory id = identities[_user];
         return (id.name, id.nationality, id.idNumber);
     }
+
+    function revokeID(address _user) public onlyAdmin {
+        require(identities[_user].isIssued, "ID not issued yet");
+        identities[_user].isIssued = false;
+    }
+
+    function updateID(address _user, string memory _name, string memory _nationality, string memory _idNumber) public onlyAdmin {
+        require(identities[_user].isIssued, "ID not issued yet");
+        identities[_user].name = _name;
+        identities[_user].nationality = _nationality;
+        identities[_user].idNumber = _idNumber;
+    }
+
+    function isIDIssued(address _user) public view returns (bool) {
+        return identities[_user].isIssued;
+    }
 }
