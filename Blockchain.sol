@@ -49,30 +49,55 @@ contract BlockchainPassportID {
         return identities[_user].isIssued;
     }
 
-    // NEW FUNCTIONS
-
-    // 1. Transfer admin rights to a new address
     function transferAdmin(address _newAdmin) public onlyAdmin {
         require(_newAdmin != address(0), "Invalid address");
         admin = _newAdmin;
     }
 
-    // 2. View your own ID
     function viewMyID() public view returns (string memory, string memory, string memory) {
         require(identities[msg.sender].isIssued, "No ID issued for caller");
         Identity memory id = identities[msg.sender];
         return (id.name, id.nationality, id.idNumber);
     }
 
-    // 3. Check if any identity (issued or not) exists for an address
     function identityExists(address _user) public view returns (bool) {
         bytes memory tempName = bytes(identities[_user].name);
         return tempName.length > 0;
     }
 
-    // 4. Permanently delete identity (admin only)
     function deleteIdentity(address _user) public onlyAdmin {
         require(identityExists(_user), "No identity to delete");
         delete identities[_user];
+    }
+
+    // ---------------- NEW FUNCTIONS ---------------- //
+
+    // 5. Allow user to update their own ID (only if issued)
+    function updateMyID(string memory _name, string memory _nationality, string memory _idNumber) public {
+        require(identities[msg.sender].isIssued, "No ID issued yet for caller");
+        identities[msg.sender].name = _name;
+        identities[msg.sender].nationality = _nationality;
+        identities[msg.sender].idNumber = _idNumber;
+    }
+
+    // 6. Batch issue multiple IDs at once (admin only)
+    function batchIssueID(address[] memory _users, string[] memory _names, string[] memory _nationalities, string[] memory _idNumbers) public onlyAdmin {
+        require(_users.length == _names.length && _names.length == _nationalities.length && _nationalities.length == _idNumbers.length, "Array lengths mismatch");
+        for (uint i = 0; i < _users.length; i++) {
+            require(!identities[_users[i]].isIssued, "ID already issued for one of the users");
+            identities[_users[i]] = Identity(_names[i], _nationalities[i], _idNumbers[i], true);
+        }
+    }
+
+    // 7. Get full Identity struct of any user (admin only)
+    function getFullIdentity(address _user) public view onlyAdmin returns (Identity memory) {
+        require(identityExists(_user), "No identity found");
+        return identities[_user];
+    }
+
+    // 8. Admin can forcibly reset ID details without revoking
+    function resetID(address _user) public onlyAdmin {
+        require(identityExists(_user), "No identity to reset");
+        identities[_user] = Identity("", "", "", false);
     }
 }
